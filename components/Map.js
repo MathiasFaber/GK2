@@ -98,9 +98,7 @@ function Map({ route, navigation }) {
 
 
     const ClothesArray = Object.values(route.params);
-    const ClothesKeys = Object.keys(route.params);
-
-    console.log(ClothesArray.map((marker, index) => { console.log(marker.longlat) }))
+    const ClothesKeys = Object.keys(route.params); // Use to create id's ???
 
     //Slutteligt benyttes SafeAreaView der sikrer at indholdet ikke overskrider grænser for enheden(Kun for IOS enheder version 11 eller nyere )
     /*

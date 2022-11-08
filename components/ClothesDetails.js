@@ -7,8 +7,6 @@ const ClothesDetails = ({ route, navigation }) => {
     const [Clothes, setClothes] = useState({});
 
     useEffect(() => {
-        console.log(route.params.Clothes, "den her idnex 1 fejler")
-        console.log(route.params.Clothes[1], "index 1")
         const selectedClothing = route.params.Clothes
         selectedClothing[1] == undefined ? setClothes(route.params.Clothes) : setClothes(route.params.Clothes[1]);
         return () => {

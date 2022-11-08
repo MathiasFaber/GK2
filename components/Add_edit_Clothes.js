@@ -35,9 +35,9 @@ function Add_edit_Clothes({ navigation, route }) {
 
     const [username, setUsername] = useState('')
     const [address, setAddress] = useState('')
-    const [currentLocation, setCurrentLocation] = useState({})
 
     const [modalVisible, setModalVisible] = useState(false);
+    const [modalVisible1, setModalVisible1] = useState(false);
 
 
     navigation.addListener('focus', () => {
@@ -70,17 +70,13 @@ function Add_edit_Clothes({ navigation, route }) {
                 latitude,
                 longitude
             }
-            console.log(coordinates, "koordinaterne b")
-            //setCurrentLocation(coordinates)
         });
-        console.log(coordinates, "cocococ")
         return coordinates
     };
 
     // Sets the newClothes state to be equal to the new input from the edit form 
     const changeTextInput = (name, event) => {
         setNewClothes({ ...newClothes, [name]: event });
-        console.log(newClothes, "nyt ")
     }
     // HandleSave is used when saving ypur edited or newly created advertisement. It saves the data to the database. 
     const handleSave = async () => {
@@ -89,8 +85,6 @@ function Add_edit_Clothes({ navigation, route }) {
         if (Produkt.length === 0 || Pris.length === 0 || Udlejningsperiode.length === 0 || Størrelse.length === 0) {
             return Alert.alert('Et af felterne er tomme!');
         }
-        console.log(checked, "checked")
-        console.log(Vaskeanvisninger, "vask")
         if (Vaskeanvisninger === undefined && checked === false) {
             return Alert.alert('Angiv venligst vaskeanvisninger');
         }
@@ -99,11 +93,10 @@ function Add_edit_Clothes({ navigation, route }) {
         }
         // Updates the data in database, if all inputfields are filled out. 
 
-        // uploadImage()
+        uploadImage()
         const coordinates = await updateLocation()
         if (isEditClothes) {
             const id = route.params.Clothes[0];
-            console.log(currentLocation, "location")
             try {
                 firebase
                     .database()
@@ -116,7 +109,6 @@ function Add_edit_Clothes({ navigation, route }) {
                 console.log(`Error: ${error.message}`);
             }
         } else {
-            console.log(currentLocation, "location")
             try {
                 firebase
                     .database()
@@ -142,7 +134,6 @@ function Add_edit_Clothes({ navigation, route }) {
         source = result
 
         let fileName = result.fileName;
-        console.log(fileName, "filename")
         if (Platform.OS === 'ios' && (fileName.endsWith('.heic') || fileName.endsWith('.HEIC'))) {
             source.fileName = `${fileName.split(".")[0]}.JPG`;
         }
@@ -243,7 +234,7 @@ function Add_edit_Clothes({ navigation, route }) {
                                             <View style={styles.centeredView1}>
                                                 <View style={styles.modalView1}>
                                                     <Text style={styles.modalText1}>
-                                                        Angiv her hvordan det udlejede tøj skal vaskes/renses.
+                                                        Angiv om det udlejede tøj har et vaskemærke her. 
                                                         Forskelligt tøj kan have forskellige vaskeanvisninger, og det
                                                         er meget vigtigt at få angivet de rigtige vaskeanvisninger,
                                                         så vores renserier kan vaske eller rense tøjet korrekt.
@@ -298,27 +289,31 @@ function Add_edit_Clothes({ navigation, route }) {
                                         <Modal
                                             animationType="slide"
                                             transparent={true}
-                                            visible={modalVisible}
+                                            visible={modalVisible1}
                                             onRequestClose={() => {
                                                 Alert.alert("Modal has been closed.");
-                                                setModalVisible(!modalVisible);
+                                                setModalVisible1(!modalVisible1);
                                             }}
                                         >
                                             <View style={styles.centeredView}>
                                                 <View style={styles.modalView}>
                                                     <Text style={styles.modalText}>
-                                                        Angiv her hvordan det udlejede tøj skal vaskes/renses.
-                                                        Forskelligt tøj kan have forskellige vaskeanvisninger, og det
-                                                        er meget vigtigt at få angivet de rigtige vaskeanvisninger,
-                                                        så vores renserier kan vaske eller rense tøjet korrekt.
-                                                        Såfremt der hverken fremgår vaskemærke eller er opgivet
-                                                        vaskeanvisning, vil tøjet blive sent retur inden udlejning,
-                                                        og udlejer er ansvarlig for at handlen ikke gennemføres,
-                                                        grundet mangel på vaskeanvisnigner.
+                                                        Vaskeanvisninger omfatter:
+                                                        {'\n'}
+                                                        {'\n'}
+                                                        hvor mange grader tøjet må vaskes ved,
+                                                        {'\n'}
+                                                        om det må stryges,
+                                                        {'\n'}
+                                                        om det må renses,
+                                                        {'\n'}
+                                                        om det må tørretumbles og 
+                                                        {'\n'}
+                                                        eventuelle yderligere vaskeanvisninger.
                                                     </Text>
                                                     <Pressable
                                                         style={[styles.button, styles.buttonClose]}
-                                                        onPress={() => setModalVisible(!modalVisible)}
+                                                        onPress={() => setModalVisible1(!modalVisible1)}
                                                     >
                                                         <Text style={styles.textStyle}>Forstået! :D</Text>
                                                     </Pressable>
@@ -327,7 +322,7 @@ function Add_edit_Clothes({ navigation, route }) {
                                         </Modal>
                                         <Pressable
                                             style={[styles.button, styles.buttonOpen]}
-                                            onPress={() => setModalVisible(true)}
+                                            onPress={() => setModalVisible1(true)}
                                         >
                                             <Text style={styles.textStyle}>?</Text>
                                         </Pressable>
@@ -500,7 +495,7 @@ const styles = StyleSheet.create({
     modalView1: {
         margin: 20,
         backgroundColor: "white",
-        borderRadius: 2,
+        borderRadius: 20,
         padding: 35,
         alignItems: "center",
         shadowColor: "#000",

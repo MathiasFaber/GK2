@@ -99,7 +99,6 @@ function ClothesList({ navigation }) {
 
     const handleSelectClothes = id => {
         const Clothes = Object.entries(Clothess).find(Clothes => Clothes[0] === id)
-        console.log(Clothes)
         navigation.navigate('Clothes Details', { Clothes });
     }
 
