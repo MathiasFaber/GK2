@@ -20,6 +20,8 @@ import Pressable from 'react-native/Libraries/Components/Pressable/Pressable';
 import * as Location from 'expo-location';
 import { Accuracy } from "expo-location";
 
+// OBS TODO: der skal kunne gemmes flere billeder end 1 til database, per annonce. 
+
 // This is the Add/Edit clothes component, that handles new or updated advertisemnts in the app.
 function Add_edit_Clothes({ navigation, route }) {
     // initial state is an object of key/value pairs, containing the keys of each prop an advertisement consists of. 
@@ -57,7 +59,6 @@ function Add_edit_Clothes({ navigation, route }) {
                 setUsername(lol[0].username)
             })
         }
-
     })
 
     const updateLocation = async () => {
@@ -93,7 +94,8 @@ function Add_edit_Clothes({ navigation, route }) {
         }
         // Updates the data in database, if all inputfields are filled out. 
 
-        uploadImage()
+        await uploadImage().then(async()=>{
+        console.log(image, "hephep")
         const coordinates = await updateLocation()
         if (isEditClothes) {
             const id = route.params.Clothes[0];
@@ -120,6 +122,9 @@ function Add_edit_Clothes({ navigation, route }) {
             }
         }
 
+        })
+        
+
     };
 
     // Camera -> upload photo
@@ -135,13 +140,13 @@ function Add_edit_Clothes({ navigation, route }) {
         source = result
         const arr = []
         result.selected?.forEach(x => {
-            console.log(x.fileName, "x.filename 1")
+            //console.log(x.fileName, "x.filename 1")
             if (Platform.OS === 'ios' && (x.fileName.endsWith('.heic') || x.fileName.endsWith('.HEIC'))) {
                 x.fileName = `${x.fileName.split(".")[0]}.JPG`;
             }
-            console.log(x.fileName, "x.filename 2")
+            //console.log(x.fileName, "x.filename 2")
             if (!result.cancelled) {
-                console.log(x.fileName, "filnavn indeni")
+                //console.log(x.fileName, "filnavn indeni")
                 const uri = x.uri
                 const fileName = x.fileName
                 arr.push({ uri, fileName })
@@ -151,6 +156,7 @@ function Add_edit_Clothes({ navigation, route }) {
     };
 
     const uploadImage = async () => {
+        console.log(image, "imgggg")
         const blob = await new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.onload = function () {
@@ -160,10 +166,10 @@ function Add_edit_Clothes({ navigation, route }) {
                 reject(new TypeError('Network request failed'));
             };
             xhr.responseType = 'blob';
-            xhr.open('GET', image[0], true);
+            xhr.open('GET', image[0]?.uri, true);
             xhr.send(null);
         })
-        const ref = firebase.storage().ref().child(`Pictures/${image[1]}`)
+        const ref = firebase.storage().ref().child(`Pictures/${image[0]?.fileName}`)
         const snapshot = ref.put(blob)
         snapshot.on(firebase.storage.TaskEvent.STATE_CHANGED,
             () => {
@@ -178,16 +184,16 @@ function Add_edit_Clothes({ navigation, route }) {
             () => {
                 snapshot.snapshot.ref.getDownloadURL().then((url) => {
                     setUploading(false)
-                    setImage([url, image[1], "done"])
-                    setFirebaseUrl(url)
+                    console.log(image[0]?.uri)
+                    //setImage([url, image[0]?.uri])
+                    //setFirebaseUrl(url)
                     blob.close()
-                    Alert.alert("Din annonce blev gemt! :D")
+                    //Alert.alert("Din annonce blev gemt! :D")
                     // navigation.navigate('Clothes List')
                     return url
                 })
             }
         )
-        // setImage([]) // Denne skal gøre at billedet forsvinder på siden efter upload
         return firebaseUrl
     }
 
@@ -198,7 +204,7 @@ function Add_edit_Clothes({ navigation, route }) {
             <Button onPress={() => navigation.navigate('Login')} title="Log ind?" />
         </View>;
     }
-    console.log(image, "image3")
+    //console.log(image, "image3")
 
     const CameraGallery = () => {
         return (
@@ -365,7 +371,7 @@ function Add_edit_Clothes({ navigation, route }) {
 
                 }
 
-                <CameraGallery/>
+                <CameraGallery />
                 <Pressable style={{
                     alignItems: 'center',
                     justifyContent: 'center',
