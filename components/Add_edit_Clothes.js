@@ -88,7 +88,7 @@ function Add_edit_Clothes({ navigation, route }) {
         if (Vaskeanvisninger === undefined && checked === false) {
             return Alert.alert('Angiv venligst vaskeanvisninger');
         }
-        if(checked === true){
+        if (checked === true) {
             Vaskeanvisninger = "Har vaskemærke"
         }
         // Updates the data in database, if all inputfields are filled out. 
@@ -127,22 +127,27 @@ function Add_edit_Clothes({ navigation, route }) {
         let source = {}
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All, // We can specify whether we need only Images or Videos
-            allowsEditing: true,
+            //allowsEditing: true,
             aspect: [4, 3],
             quality: 1,   // 0 means compress for small size, 1 means compress for maximum quality
+            allowsMultipleSelection: true
         });
         source = result
-
-        let fileName = result.fileName;
-        if (Platform.OS === 'ios' && (fileName.endsWith('.heic') || fileName.endsWith('.HEIC'))) {
-            source.fileName = `${fileName.split(".")[0]}.JPG`;
-        }
-
-        if (!result.cancelled) {
-            setImage([source.uri, source.fileName]);
-        }
-        console.log(source, 456);
-
+        const arr = []
+        result.selected?.forEach(x => {
+            console.log(x.fileName, "x.filename 1")
+            if (Platform.OS === 'ios' && (x.fileName.endsWith('.heic') || x.fileName.endsWith('.HEIC'))) {
+                x.fileName = `${x.fileName.split(".")[0]}.JPG`;
+            }
+            console.log(x.fileName, "x.filename 2")
+            if (!result.cancelled) {
+                console.log(x.fileName, "filnavn indeni")
+                const uri = x.uri
+                const fileName = x.fileName
+                arr.push({ uri, fileName })
+            }
+        });
+        setImage(arr)
     };
 
     const uploadImage = async () => {
@@ -182,6 +187,7 @@ function Add_edit_Clothes({ navigation, route }) {
                 })
             }
         )
+        // setImage([]) // Denne skal gøre at billedet forsvinder på siden efter upload
         return firebaseUrl
     }
 
@@ -192,6 +198,32 @@ function Add_edit_Clothes({ navigation, route }) {
             <Button onPress={() => navigation.navigate('Login')} title="Log ind?" />
         </View>;
     }
+    console.log(image, "image3")
+
+    const CameraGallery = () => {
+        return (
+            <View>
+                <Text style={styles.row}>Billeder valgt: {image.length}</Text>
+                {
+                    image.length == 1 ? image.map((img, index) => (
+                        <Image source={{ uri: img.uri }} style={{ width: 340, height: 400, margin: 10, alignSelf: 'center' }} key={index} />
+                    ))
+                        :
+                        <ScrollView horizontal={true} >
+                            {
+                                image.length > 0
+                                    ? image.map((img, index) => (
+                                        <Image source={{ uri: img.uri }} style={{ width: 175, height: 250, margin: 10 }} key={index} />
+                                    ))
+                                    : <Text style={{ color: "white" }}> No images chosen yet </Text>
+                            }
+                        </ScrollView>
+
+                }
+            </View>
+        )
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView>
@@ -222,43 +254,43 @@ function Add_edit_Clothes({ navigation, route }) {
                     <Text style={styles.label}>Har vaskemærke</Text>
                     <Checkbox style={{ marginLeft: 20 }} value={checked} onValueChange={setChecked} color={'#d9825f'} />
                     <View style={styles.centeredView1}>
-                                        <Modal
-                                            animationType="slide"
-                                            transparent={true}
-                                            visible={modalVisible}
-                                            onRequestClose={() => {
-                                                Alert.alert("Modal has been closed.");
-                                                setModalVisible(!modalVisible);
-                                            }}
-                                        >
-                                            <View style={styles.centeredView1}>
-                                                <View style={styles.modalView1}>
-                                                    <Text style={styles.modalText1}>
-                                                        Angiv om det udlejede tøj har et vaskemærke her. 
-                                                        Forskelligt tøj kan have forskellige vaskeanvisninger, og det
-                                                        er meget vigtigt at få angivet de rigtige vaskeanvisninger,
-                                                        så vores renserier kan vaske eller rense tøjet korrekt.
-                                                        Såfremt der hverken fremgår vaskemærke eller er opgivet
-                                                        vaskeanvisning, vil tøjet blive sent retur inden udlejning,
-                                                        og udlejer er ansvarlig for at handlen ikke gennemføres,
-                                                        grundet mangel på vaskeanvisnigner.
-                                                    </Text>
-                                                    <Pressable
-                                                        style={[styles.button, styles.buttonClose]}
-                                                        onPress={() => setModalVisible(!modalVisible)}
-                                                    >
-                                                        <Text style={styles.textStyle}>Forstået! :D</Text>
-                                                    </Pressable>
-                                                </View>
-                                            </View>
-                                        </Modal>
-                                        <Pressable
-                                            style={[styles.button, styles.buttonOpen]}
-                                            onPress={() => setModalVisible(true)}
-                                        >
-                                            <Text style={styles.textStyle}>?</Text>
-                                        </Pressable>
-                                    </View>
+                        <Modal
+                            animationType="slide"
+                            transparent={true}
+                            visible={modalVisible}
+                            onRequestClose={() => {
+                                Alert.alert("Modal has been closed.");
+                                setModalVisible(!modalVisible);
+                            }}
+                        >
+                            <View style={styles.centeredView1}>
+                                <View style={styles.modalView1}>
+                                    <Text style={styles.modalText1}>
+                                        Angiv om det udlejede tøj har et vaskemærke her.
+                                        Forskelligt tøj kan have forskellige vaskeanvisninger, og det
+                                        er meget vigtigt at få angivet de rigtige vaskeanvisninger,
+                                        så vores renserier kan vaske eller rense tøjet korrekt.
+                                        Såfremt der hverken fremgår vaskemærke eller er opgivet
+                                        vaskeanvisning, vil tøjet blive sent retur inden udlejning,
+                                        og udlejer er ansvarlig for at handlen ikke gennemføres,
+                                        grundet mangel på vaskeanvisnigner.
+                                    </Text>
+                                    <Pressable
+                                        style={[styles.button, styles.buttonClose]}
+                                        onPress={() => setModalVisible(!modalVisible)}
+                                    >
+                                        <Text style={styles.textStyle}>Forstået! :D</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </Modal>
+                        <Pressable
+                            style={[styles.button, styles.buttonOpen]}
+                            onPress={() => setModalVisible(true)}
+                        >
+                            <Text style={styles.textStyle}>?</Text>
+                        </Pressable>
+                    </View>
                 </View>
                 {
                     checked ? null :
@@ -307,7 +339,7 @@ function Add_edit_Clothes({ navigation, route }) {
                                                         {'\n'}
                                                         om det må renses,
                                                         {'\n'}
-                                                        om det må tørretumbles og 
+                                                        om det må tørretumbles og
                                                         {'\n'}
                                                         eventuelle yderligere vaskeanvisninger.
                                                     </Text>
@@ -333,7 +365,7 @@ function Add_edit_Clothes({ navigation, route }) {
 
                 }
 
-                {image[0] && <Image source={{ uri: image[0] }} style={{ width: 340, height: 400, alignSelf: "center", margin: 10 }} />}
+                <CameraGallery/>
                 <Pressable style={{
                     alignItems: 'center',
                     justifyContent: 'center',
