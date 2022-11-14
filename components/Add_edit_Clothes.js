@@ -20,8 +20,6 @@ import Pressable from 'react-native/Libraries/Components/Pressable/Pressable';
 import * as Location from 'expo-location';
 import { Accuracy } from "expo-location";
 
-// OBS TODO: der skal kunne gemmes flere billeder end 1 til database, per annonce. 
-
 // This is the Add/Edit clothes component, that handles new or updated advertisemnts in the app.
 function Add_edit_Clothes({ navigation, route }) {
     // initial state is an object of key/value pairs, containing the keys of each prop an advertisement consists of. 
@@ -31,6 +29,7 @@ function Add_edit_Clothes({ navigation, route }) {
     const isEditClothes = route.name === "Edit Clothes"
     const [image, setImage] = useState([])
     const [uploading, setUploading] = useState(false)
+    const [loading1, setLoading1] = useState(false)
     const [firebaseUrl, setFirebaseUrl] = useState('')
     const [checked, setChecked] = useState(true)
     const [checked2, setChecked2] = useState(true)
@@ -86,49 +85,17 @@ function Add_edit_Clothes({ navigation, route }) {
         if (Produkt.length === 0 || Pris.length === 0 || Udlejningsperiode.length === 0 || Størrelse.length === 0) {
             return Alert.alert('Et af felterne er tomme!');
         }
-        if (Vaskeanvisninger === undefined && checked === false) {
-            return Alert.alert('Angiv venligst vaskeanvisninger');
-        }
-        if (checked === true) {
-            Vaskeanvisninger = "Har vaskemærke"
-        }
         // Updates the data in database, if all inputfields are filled out. 
 
-        await uploadImage().then(async()=>{
-        console.log(image, "hephep")
+        const hej = await uploadImage()
+        console.log(hej, "firebaseurls")
         const coordinates = await updateLocation()
-        if (isEditClothes) {
-            const id = route.params.Clothes[0];
-            try {
-                firebase
-                    .database()
-                    .ref(`/Clothess/${id}`)
-                    .update({ Udlejer: username, Produkt, Pris, Udlejningsperiode, Størrelse, img: image[1], Vaskeanvisninger, longlat: coordinates });
-                Alert.alert("Din info er nu opdateret");
-                // When data is updated, user is navigated to the page of the advertisements, and should be able to see the changes from there. 
-                // navigation.navigate("Clothes Details", { Clothes });
-            } catch (error) {
-                console.log(`Error: ${error.message}`);
-            }
-        } else {
-            try {
-                firebase
-                    .database()
-                    .ref('/Clothess/')
-                    .push({ Udlejer: username, Produkt, Pris, Udlejningsperiode, Størrelse, img: image[1], Vaskeanvisninger, longlat: coordinates });
-                setNewClothes(initialState)
-            } catch (error) {
-                console.log(`Error: ${error.message}`);
-            }
-        }
-
-        })
-        
-
+        saveToRealTimeDatabase(coordinates)
     };
 
     // Camera -> upload photo
     const pickImage = async () => {
+        setLoading1(true)
         let source = {}
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All, // We can specify whether we need only Images or Videos
@@ -140,62 +107,105 @@ function Add_edit_Clothes({ navigation, route }) {
         source = result
         const arr = []
         result.selected?.forEach(x => {
-            //console.log(x.fileName, "x.filename 1")
             if (Platform.OS === 'ios' && (x.fileName.endsWith('.heic') || x.fileName.endsWith('.HEIC'))) {
                 x.fileName = `${x.fileName.split(".")[0]}.JPG`;
             }
-            //console.log(x.fileName, "x.filename 2")
             if (!result.cancelled) {
-                //console.log(x.fileName, "filnavn indeni")
                 const uri = x.uri
                 const fileName = x.fileName
                 arr.push({ uri, fileName })
             }
         });
+        console.log(arr, "arrpick")
         setImage(arr)
+        setLoading1(false)
     };
 
     const uploadImage = async () => {
-        console.log(image, "imgggg")
-        const blob = await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.onload = function () {
-                resolve(xhr.response);
-            };
-            xhr.onerror = function () {
-                reject(new TypeError('Network request failed'));
-            };
-            xhr.responseType = 'blob';
-            xhr.open('GET', image[0]?.uri, true);
-            xhr.send(null);
-        })
-        const ref = firebase.storage().ref().child(`Pictures/${image[0]?.fileName}`)
-        const snapshot = ref.put(blob)
-        snapshot.on(firebase.storage.TaskEvent.STATE_CHANGED,
-            () => {
-                setUploading(true)
-            },
-            (error) => {
-                setUploading(false)
-                console.log(error)
-                blob.close()
-                return
-            },
-            () => {
-                snapshot.snapshot.ref.getDownloadURL().then((url) => {
-                    setUploading(false)
-                    console.log(image[0]?.uri)
-                    //setImage([url, image[0]?.uri])
-                    //setFirebaseUrl(url)
-                    blob.close()
-                    //Alert.alert("Din annonce blev gemt! :D")
-                    // navigation.navigate('Clothes List')
-                    return url
+        const arr = []
+        image.map(async (y) => {
+            try {
+                const blob = await new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.onload = function () {
+                        resolve(xhr.response);
+                    };
+                    xhr.onerror = function () {
+                        reject(new TypeError('Network request failed'));
+                    };
+                    xhr.responseType = 'blob';
+                    xhr.open('GET', y.uri, true);
+                    xhr.send(null);
                 })
+                const ref = firebase.storage().ref().child(`Pictures/${y.fileName}`)
+                const snapshot = ref.put(blob)
+                snapshot.on(firebase.storage.TaskEvent.STATE_CHANGED,
+                    () => {
+                        setUploading(true)
+                    },
+                    (error) => {
+                        setUploading(false)
+                        console.log(error)
+                        blob.close()
+                        return
+                    },
+                    () => {
+                        snapshot.snapshot.ref.getDownloadURL().then((url) => {
+                            // works for now, but should probably return firebase urls to save that in db.
+                            // console.log(url, "url")
+                            // setImage([url, y.fileName])
+                            arr.push(url)
+                            // setUploading(false)
+                            // setFirebaseUrl(url)
+                            blob.close()
+                            // Alert.alert("Din annonce blev gemt! :D")
+                            // navigation.navigate('Clothes List')
+                        })
+                    }
+                )
+            } catch (error) {
+                console.log(error)
             }
-        )
-        return firebaseUrl
+        })
+        return arr;
     }
+
+    const saveToRealTimeDatabase = (coordinates) => {
+        var { Produkt, Pris, Udlejningsperiode, Størrelse, Vaskeanvisninger } = newClothes;
+        if (Vaskeanvisninger === undefined && checked === false) {
+            return Alert.alert('Angiv venligst vaskeanvisninger');
+        }
+        if (checked === true) {
+            Vaskeanvisninger = "Har vaskemærke"
+        }
+        if (isEditClothes) {
+            const id = route.params.Clothes[0];
+            try {
+                firebase
+                    .database()
+                    .ref(`/Clothess/${id}`)
+                    .update({ Udlejer: username, Produkt, Pris, Udlejningsperiode, Størrelse, img: image.map((x) => { return x.fileName }), Vaskeanvisninger, longlat: coordinates });
+                Alert.alert("Din info er nu opdateret");
+                // When data is updated, user is navigated to the page of the advertisements, and should be able to see the changes from there. 
+                // navigation.navigate("Clothes Details", { Clothes });
+            } catch (error) {
+                console.log(`Error: ${error.message}`);
+            }
+            setImage([])
+        } else {
+            try {
+                firebase
+                    .database()
+                    .ref('/Clothess/')
+                    .push({ Udlejer: username, Produkt, Pris, Udlejningsperiode, Størrelse, img: image.map((x) => { return x.fileName }), Vaskeanvisninger, longlat: coordinates });
+                setNewClothes(initialState)
+            } catch (error) {
+                console.log(`Error: ${error.message}`);
+            }
+            setImage([])
+        }
+    }
+
 
 
     if (!firebase.auth().currentUser) {
@@ -385,7 +395,11 @@ function Add_edit_Clothes({ navigation, route }) {
                     marginBottom: 15,
                     marginTop: 5,
                 }} onPress={pickImage}>
-                    <Text>Select image</Text>
+                    {loading1 ?
+                        <ActivityIndicator size={'small'} color={'black'} />
+                        :
+                        <Text>Select image</Text>
+                    }
                 </Pressable>
 
                 {!uploading ?
