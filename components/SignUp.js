@@ -29,7 +29,6 @@ function SignUp({ navigation }) {
             // after creating user, create user in database: https://stackoverflow.com/questions/43509021/how-to-add-username-with-email-and-password-in-firebase
             // experiment, not tested
             firebase.auth().onAuthStateChanged(function (user) {
-                console.log(address)
                 if (user) {
                     // Updates the user attributes:
                     user.updateProfile({ // <-- Update Method here
@@ -38,12 +37,13 @@ function SignUp({ navigation }) {
 
                     }).then(function () {
 
+                        // Unused .then function
                         // Profile updated successfully!
                         //  "NEW USER NAME"
-
                         var displayName = user.displayName;
 
                         console.log(displayName, "displayName")
+
                     }, function (error) {
                         // An error happened.
                         console.log(error)
